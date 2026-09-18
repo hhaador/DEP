@@ -1,150 +1,23 @@
-/* Delta Electric Power interactions */
-const pillarData = {
-  ac: {
-    title: 'AC Heavy-Duty Cooling Arrays',
-    desc: 'Designed for high-voltage panel boards, transformer units, and uninterrupted industrial machinery cooling. High airflow output with sustained thermal resilience under continuous load.',
-    specs: ['220V - 380V Direct Input Range', 'Cast Aluminum Impeller Frames', 'Maintenance-free dual ball bearings'],
-    tag: 'MODE: AC_STANDARD',
-    status: '> Telemetry: Nominal 2800 RPM Output'
-  },
-  dc: {
-    title: 'DC & EC Precision Micro-Ventilation',
-    desc: 'Variable speed controls via PWM signals. Ultra-low wattage consumption tailored for precision telecom cabinets, automation logic racks, and battery storage modules.',
-    specs: ['12V / 24V / 48V Precision Inputs', 'Integrated PWM Feedback Control', 'Ultra-Quiet Acoustic Dampening'],
-    tag: 'MODE: DC_EC_PRECISION',
-    status: '> Telemetry: 92% Motor Energy Efficiency'
-  },
-  blower: {
-    title: 'Industrial Centrifugal Blowers',
-    desc: 'High static pressure blowers constructed to drive dense airflow through restricted ductwork, heavy filter assemblies, and severe industrial environments.',
-    specs: ['High Static Pressure Chamber', 'IP68 Environmental Sealing', 'Reinforced Multi-Blade Turbines'],
-    tag: 'MODE: BLOWER_HIGH_PRESS',
-    status: '> Telemetry: Static Pressure Peak 850 Pa'
-  }
-};
-
-const byId = id => document.getElementById(id);
-const firstElement = (...ids) => ids.map(byId).find(Boolean);
-
-function switchPillar(type) {
-  const data = pillarData[type];
-  if (!data) return;
-
-  document.querySelectorAll('.pillar-btn, .tab').forEach(button => {
-    button.classList.remove('active', 'bg-royal-blue', 'text-white', 'border-royal-blue');
-  });
-
-  const active = byId(`tab-${type}`) || document.querySelector(`[data-pillar="${type}"]`);
-  active?.classList.add('active', 'bg-royal-blue', 'text-white', 'border-royal-blue');
-
-  if (byId('pillarTitle')) byId('pillarTitle').textContent = data.title;
-  if (byId('pillarDesc')) byId('pillarDesc').textContent = data.desc;
-  if (byId('pillarTag')) byId('pillarTag').textContent = data.tag;
-  if (byId('pillarStatus')) byId('pillarStatus').textContent = data.status;
-  if (byId('pillarSpecs')) {
-    byId('pillarSpecs').innerHTML = data.specs
-      .map(spec => `<li><i class="fa-solid fa-check text-royal-blue mr-2"></i>${spec}</li>`)
-      .join('');
-  }
-}
-
-function runCalculation() {
-  const select = byId('fanSelect');
-  const quantityInput = firstElement('quantityInput', 'quantity');
-  const accessory = firstElement('accessorySelect', 'accessory');
-  const display = firstElement('totalPriceDisplay', 'total');
-  if (!select || !quantityInput || !accessory || !display) return;
-
-  const quantity = Math.max(1, parseInt(quantityInput.value, 10) || 1);
-  quantityInput.value = quantity;
-  const total = ((Number(select.value) || 0) + (Number(accessory.value) || 0)) * quantity;
-  display.textContent = `$${total.toFixed(2)}`;
-}
-
-function selectProduct(modelName) {
-  const select = byId('fanSelect');
-  if (!select) return;
-  const optionIndex = [...select.options].findIndex(option => option.dataset.name === modelName);
-  if (optionIndex < 0) return;
-  select.selectedIndex = optionIndex;
-  runCalculation();
-  byId('calculator')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function adjustFanSpeed(mode) {
-  const consoleBox = byId('telemetryConsole');
-  if (!consoleBox) return;
-  const time = new Date().toLocaleTimeString();
-  const message = mode === 'low'
-    ? 'ECO MODE ACTIVATED: Voltage scaled to 60%. RPM throttled to 1400. Noise < 28 dBA.'
-    : 'HIGH PERFORMANCE ENGAGED: Max voltage applied. RPM boosted to 3600. Airflow at 100% capacity.';
-  consoleBox.insertAdjacentHTML('beforeend', `<p>[${time}] ${message}</p>`);
-  consoleBox.scrollTop = consoleBox.scrollHeight;
-}
-
-function toggleNosFeature(checkbox) {
-  const consoleBox = byId('telemetryConsole');
-  if (!consoleBox) return;
-  const time = new Date().toLocaleTimeString();
-  const message = checkbox.checked
-    ? 'NOS BOOST MODE: Standby protocol loaded. Feature module active.'
-    : 'NOS BOOST MODE: Deactivated.';
-  consoleBox.insertAdjacentHTML('beforeend', `<p>[${time}] ${message}</p>`);
-  consoleBox.scrollTop = consoleBox.scrollHeight;
-}
-
-function handleOrderSubmission(event) {
-  event.preventDefault();
-  const select = byId('fanSelect');
-  const accessory = firstElement('accessorySelect', 'accessory');
-  const quantity = firstElement('quantityInput', 'quantity');
-  const total = firstElement('totalPriceDisplay', 'total');
-  if (!select || !accessory || !quantity || !total) return;
-
-  const model = select.options[select.selectedIndex]?.dataset.name || select.value;
-  const accessoryName = accessory.options[accessory.selectedIndex]?.dataset.acc
-    || accessory.options[accessory.selectedIndex]?.dataset.name
-    || accessory.options[accessory.selectedIndex]?.textContent;
-  const message = `Hello DELTA ELECTRIC POWER!\nI would like to place an order/quote request:\n\n*Model:* ${model}\n*Quantity:* ${quantity.value} unit(s)\n*Accessory:* ${accessoryName}\n*Total Estimated Quote:* ${total.textContent}\n\nPlease confirm availability and dispatch details.`;
-  window.open(`https://wa.me/8801774777962?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
-}
-
-function openZoomModal(image, title) {
-  const modal = byId('imageModal');
-  const modalImage = byId('modalImg');
-  if (!modal || !modalImage) return;
-  modalImage.src = image;
-  modalImage.alt = title;
-  if (byId('modalTitle')) byId('modalTitle').textContent = title;
-  modal.classList.remove('hidden');
-}
-
-function closeZoomModal() {
-  byId('imageModal')?.classList.add('hidden');
-}
-
-function toggleImageZoom(container) {
-  container.querySelector('img')?.classList.toggle('scale-150');
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('[data-pillar]').forEach(button => {
-    button.addEventListener('click', () => switchPillar(button.dataset.pillar));
-  });
-  document.querySelectorAll('.pillar-btn').forEach(button => {
-    button.addEventListener('click', () => switchPillar(button.id.replace('tab-', '')));
-  });
-  document.querySelectorAll('[data-mode]').forEach(button => {
-    button.addEventListener('click', () => adjustFanSpeed(button.dataset.mode));
-  });
-  document.querySelectorAll('[data-product]').forEach(button => {
-    button.addEventListener('click', () => selectProduct(button.dataset.product));
-  });
-
-  byId('fanSelect')?.addEventListener('change', runCalculation);
-  firstElement('quantityInput', 'quantity')?.addEventListener('input', runCalculation);
-  firstElement('accessorySelect', 'accessory')?.addEventListener('change', runCalculation);
-  byId('quoteForm')?.addEventListener('submit', handleOrderSubmission);
-  byId('calculatorForm')?.addEventListener('submit', handleOrderSubmission);
-  runCalculation();
-});
+const products=[
+ ['DRETOSONS NEDI-PE210','220V AC Compact Panel Fan',45,'https://res.cloudinary.com/ne7xgr2z/image/upload/f_auto,q_auto/image'],
+ ['NMB-7 3610KL','24V DC Low-Noise Precision',52,'https://res.cloudinary.com/ne7xgr2z/image/upload/f_auto,q_auto/image'],
+ ['Nider BETA-BL 12V','Brushless High-Flow Blower',38,'https://res.cloudinary.com/ne7xgr2z/image/upload/f_auto,q_auto/image'],
+ ['ebm-papst R9G310','24V 1.70A High Efficiency',120,'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80'],
+ ['Delta Multi-Stack','Stacked Impeller Module',185,'https://res.cloudinary.com/ne7xgr2z/image/upload/f_auto,q_auto/image'],
+ ['EC Blower Unit','380V Industrial Centrifugal',210,'https://res.cloudinary.com/ne7xgr2z/image/upload/f_auto/q_auto/us5lmqze0f3wjegxbqie'],
+ ['High-Flow Axial','IP68 Waterproof Heavy Fan',145,'https://res.cloudinary.com/ne7xgr2z/image/upload/f_auto/q_auto/a7ojn45hr9qxxmxi355h'],
+ ['Delta Heavy Circular','220V Metal Frame Duct Fan',89,'https://res.cloudinary.com/ne7xgr2z/image/upload/f_auto/q_auto/wybvh94nfdklrs6ixb0a'],
+ ['Double Impeller','48V DC High Pressure Array',165,'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=600&q=80'],
+ ['Sub-Station Cabinet','12V/24V Industrial Auxiliary',65,'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80']
+];
+const pillars={ac:['AC Heavy-Duty Cooling Arrays','Designed for high-voltage panel boards, transformer units, and uninterrupted industrial machinery cooling. High airflow output with sustained thermal resilience under continuous load.',['220V - 380V Direct Input Range','Cast Aluminum Impeller Frames','Maintenance-free dual ball bearings'],'MODE: AC_STANDARD','> Telemetry: Nominal 2800 RPM Output'],dc:['DC & EC Precision Micro-Ventilation','Variable speed controls via PWM signals. Ultra-low wattage consumption tailored for precision telecom cabinets, automation logic racks, and battery storage modules.',['12V / 24V / 48V Precision Inputs','Integrated PWM Feedback Control','Ultra-Quiet Acoustic Dampening'],'MODE: DC_EC_PRECISION','> Telemetry: 92% Motor Energy Efficiency'],blower:['Industrial Centrifugal Blowers','High static pressure blowers constructed to drive dense airflow through restricted ductwork, heavy filter assemblies, and severe industrial environments.',['High Static Pressure Chamber','IP68 Environmental Sealing','Reinforced Multi-Blade Turbines'],'MODE: BLOWER_HIGH_PRESS','> Telemetry: Static Pressure Peak 850 Pa']};
+const $=id=>document.getElementById(id);const fanSelect=$('fanSelect');
+function renderProducts(){products.forEach(([name,desc,price,image])=>{const option=document.createElement('option');option.value=price;option.dataset.name=name;option.textContent=`${name} ($${price.toFixed(2)})`;fanSelect.appendChild(option);const card=document.createElement('article');card.className='product-card';card.innerHTML=`<div><div class="card-img"><img src="${image}" alt="${name}" loading="lazy"><button class="zoom-badge" type="button" aria-label="Zoom ${name}" onclick="openZoomModal('${image}','${name}')"><i class="fa-solid fa-magnifying-glass-plus"></i> ZOOM</button></div><h3>${name}</h3><p>${desc}</p><p class="price">Price: $${price.toFixed(2)}</p></div><button type="button" data-product="${name}">SELECT FOR QUOTE</button>`;$('productGrid').appendChild(card)});document.querySelectorAll('[data-product]').forEach(button=>button.addEventListener('click',()=>selectProduct(button.dataset.product)))}
+function runCalculation(){const quantity=Math.max(1,parseInt($('quantityInput').value,10)||1);$('quantityInput').value=quantity;$('totalPriceDisplay').textContent=`$${((Number(fanSelect.value)||0)+(Number($('accessorySelect').value)||0))*quantity.toFixed(2)}`}
+function switchPillar(type){const data=pillars[type];if(!data)return;document.querySelectorAll('.pillar-btn').forEach(button=>button.classList.remove('active'));$(`tab-${type}`).classList.add('active');$('pillarTitle').textContent=data[0];$('pillarDesc').textContent=data[1];$('pillarSpecs').innerHTML=data[2].map(item=>`<li>${item}</li>`).join('');$('pillarConsole').textContent=`SYS_PILLAR_CONSOLE v2.4\n> Checking Input Signal... [OK]\n> Frequency: 50Hz/60Hz Sync Verified\n> Thermal Limit: < 85°C Operational\n> ${data[4]}`}
+function selectProduct(name){const index=[...fanSelect.options].findIndex(option=>option.dataset.name===name);if(index>=0){fanSelect.selectedIndex=index;runCalculation();$('calculator').scrollIntoView({behavior:'smooth'})}}
+function adjustFanSpeed(mode){const box=$('telemetryConsole');const time=new Date().toLocaleTimeString();box.insertAdjacentHTML('beforeend',`<p>[${time}] ${mode==='low'?'ECO MODE ACTIVATED: Voltage scaled to 60%. RPM throttled to 1400. Noise < 28 dBA.':'HIGH PERFORMANCE ENGAGED: Max voltage applied. RPM boosted to 3600. Airflow at 100% capacity.'}</p>`);box.scrollTop=box.scrollHeight}
+function toggleNosFeature(input){const box=$('telemetryConsole');const time=new Date().toLocaleTimeString();box.insertAdjacentHTML('beforeend',`<p>[${time}] NOS BOOST MODE: ${input.checked?'Standby protocol loaded. Feature module active.':'Deactivated.'}</p>`);box.scrollTop=box.scrollHeight}
+function handleOrderSubmission(event){event.preventDefault();const model=fanSelect.options[fanSelect.selectedIndex].dataset.name;const accessory=$('accessorySelect').options[$('accessorySelect').selectedIndex].dataset.acc;const message=`Hello DELTA ELECTRIC POWER!\nI would like to place an order/quote request:\n\n*Model:* ${model}\n*Quantity:* ${$('quantityInput').value} unit(s)\n*Accessory:* ${accessory}\n*Total Estimated Quote:* ${$('totalPriceDisplay').textContent}\n\nPlease confirm availability and dispatch details.`;window.open(`https://wa.me/8801774777962?text=${encodeURIComponent(message)}`,'_blank')}
+function openZoomModal(image,title){$('modalImg').src=image;$('modalImg').alt=title;$('modalTitle').textContent=title;$('imageModal').classList.remove('hidden')}function closeZoomModal(){$('imageModal').classList.add('hidden')}function toggleImageZoom(container){container.querySelector('img').classList.toggle('scale-150')}
+window.addEventListener('DOMContentLoaded',()=>{renderProducts();fanSelect.addEventListener('change',runCalculation);$('quantityInput').addEventListener('input',runCalculation);$('accessorySelect').addEventListener('change',runCalculation);runCalculation()});
